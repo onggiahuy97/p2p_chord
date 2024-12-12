@@ -57,7 +57,7 @@ struct ContentView: View {
                         }
                     }
                     .font(.largeTitle)
-                    Text("Hashing SHA1 = \((viewModel.hashValue != nil && !viewModel.key.isEmpty) ? "\(viewModel.hashValue!)" : "Loading...")")
+                    Text("Hashing SHA1 = \(viewModel.hashValue)")
                         .font(.largeTitle)
                 }
             }

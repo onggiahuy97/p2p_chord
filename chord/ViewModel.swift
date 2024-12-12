@@ -30,6 +30,7 @@ struct NodesResponse: Decodable {
 
 struct HashResponse: Codable {
     let hash: Int
+    let successor: Int
 }
 
 class ViewModel: ObservableObject {
@@ -38,7 +39,10 @@ class ViewModel: ObservableObject {
     @Published var nodeInfo: String?
     @Published var key: String = ""
     @Published var value: String = "test"
-    @Published var hashValue: Int?
+    @Published var hashObject: HashResponse?
+    @Published var insertStatus: Int?
+    
+    var viewCallBack: ((Int) -> Void)?
 
     let nodeRadius: CGFloat = 18
     let ringDiameter: CGFloat = 300
@@ -49,6 +53,13 @@ class ViewModel: ObservableObject {
     init() {
         self.fetchNodes()
         setupKeyListener()
+    }
+    
+    var hashValue: String {
+        if hashObject != nil && !key.isEmpty {
+            return "\(hashObject!.hash)"
+        }
+        return "Loading..."
     }
     
     private func setupKeyListener() {
@@ -74,7 +85,8 @@ class ViewModel: ObservableObject {
             do {
                 let response = try JSONDecoder().decode(HashResponse.self, from: data)
                 DispatchQueue.main.async {
-                    self?.hashValue = response.hash
+                    self?.hashObject = response
+                    
                 }
             } catch {
                 print("Decoding error: \(error)")
@@ -163,6 +175,12 @@ class ViewModel: ObservableObject {
                 }
                 
                 self.fetchNodes()
+                
+                DispatchQueue.main.async {
+                    if let successor = self.hashObject?.successor {
+                        self.viewCallBack?(successor)
+                    }
+                }
                 
             }.resume()
         } catch {

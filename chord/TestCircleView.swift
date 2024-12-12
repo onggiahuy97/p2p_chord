@@ -10,6 +10,9 @@ struct CircleWithNodes: View {
     @EnvironmentObject var viewModel: ViewModel
     @Namespace private var namespace
     
+    @State private var movingObjectPosition: CGPoint = .init(x: 465, y: 700)
+    @State private var isAnimating = false
+    
     let radius: CGFloat = 250
     let rotationOffset: CGFloat = .pi / 5
     // Calculate positions for nodes
@@ -23,6 +26,20 @@ struct CircleWithNodes: View {
             )
         }
     
+    private func moveObjectToNode(_ targetNodeId: Int) {
+        guard let targetIndex = viewModel.nodes.firstIndex(where: { $0.id == targetNodeId }) else { return }
+        let targetPosition = nodePosition(for: targetIndex)
+        
+        withAnimation(.spring(response: 1.6, dampingFraction: 0.8)) {
+            movingObjectPosition = CGPoint(
+                x: targetPosition.x + radius,
+                y: targetPosition.y + radius
+            )
+        } completion: {
+            self.movingObjectPosition = .init(x: 465, y: 700)
+        }
+    }
+    
     var body: some View {
         VStack {
             Text("Chord")
@@ -35,14 +52,20 @@ struct CircleWithNodes: View {
                     .stroke(Color.gray, lineWidth: 2)
                     .frame(width: radius * 2, height: radius * 2)
                 
+                // Moving object
+                Image(systemName: "key.horizontal.fill")
+                    .font(.largeTitle)
+                    .position(movingObjectPosition)
+                
                 // Nodes
 //                ForEach(Array(viewModel.nodes.map(\.id).enumerated()), id: \.0) { index, value in
                 ForEach(viewModel.nodes, id: \.id) { node in
                     let index = viewModel.nodes.firstIndex(where: { $0.id == node.id}) ?? -1
                     let position = nodePosition(for: index)
+                    
                     Circle()
                         .fill(node.id == (viewModel.currentNode?.id ?? -1) ? Color.blue : Color.gray)
-                        .overlay(Text("\(node.id)").foregroundStyle(.white), alignment: .center)
+                        .overlay(Text("\(node.id)").foregroundStyle(.white).font(.title), alignment: .center)
                         .overlay(Text("\(node.messagesCount) keys").bold().position(x: 75, y:0))
                         .frame(width: 50, height: 50)
                         .position(
@@ -53,9 +76,7 @@ struct CircleWithNodes: View {
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: index)
                         .onTapGesture {
                             viewModel.fetchNodeInfo(for: node.id)
-                        }
-                        .onTapGesture {
-                            viewModel.fetchNodeInfo(for: node.id)
+                         
                         }
                 }
             }
@@ -63,6 +84,11 @@ struct CircleWithNodes: View {
             .padding()
         }
         .padding(20)
+        .onAppear {
+            viewModel.viewCallBack = { index in
+                moveObjectToNode(index)
+            }
+        }
     }
 }
 
